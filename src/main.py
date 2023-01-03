@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-
 import time
 
 from const import *
@@ -17,7 +16,7 @@ class Main:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption('Chess')
         self.game = Game()
-        self.stockfish = Stockfish(path = os.path.join(f'stockfish/stockfish.exe'), depth = 20)
+        self.stockfish = Stockfish(path = os.path.join(f'stockfish/stockfish.exe'))
         #self.texture = os.path.join(f'assets/images/imgs-{size}px/{self.color}_{self.name}.png')
 
     def mainloop(self):
@@ -43,14 +42,23 @@ class Main:
                 game.show_game_over(screen)
 
             if game.next_player == 'black':
-                
+
                 pygame.display.update()
+                time.sleep(0.5)
+
                 best_move = stockfish.get_best_move()
                 stockfish.make_moves_from_current_position([best_move])
                 ai_initial = Square(8 - int(best_move[1]), ord(best_move[0]) - 97)
                 piece = board.squares[8 - int(best_move[1])][ord(best_move[0]) - 97].piece
                 ai_final = Square(8 - int(best_move[3]), ord(best_move[2]) - 97, piece)
                 ai_move = Move(ai_initial, ai_final)
+
+                en_passant = False
+                if isinstance(piece, Pawn):
+                    en_passant = board.squares[8 - int(best_move[3]) - piece.dir][ord(best_move[2]) - 97].has_enemy_piece(piece.color)
+                captured =  (board.squares[8 - int(best_move[3])][ord(best_move[2]) - 97].has_piece() or en_passant)
+                game.play_sound(captured)
+
                 board.calc_moves(piece, 8 - int(best_move[1]), ord(best_move[0]) - 97)
                 board.move(ai_move)
                 game.next_turn()
